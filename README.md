@@ -20,7 +20,10 @@ runner has a modern CPU. The final check must be done on the Q9550.
    - `patches/webkit-penryn-icu.patch`: WebKit's Windows ICU helper hardcodes
      `-march=nehalem`; with `BUN_CORE2_BUILD=1` it now uses `-march=penryn`.
      Without this, ICU could contain POPCNT/SSE4.2 code and the final binary
-     would not really be Penryn-only.
+     would not really be Penryn-only. The same patch fixes an upstream
+     PowerShell parse error in that helper (`$ICU_VERSION:` must be
+     `${ICU_VERSION}:`), which otherwise stops the local Windows WebKit build
+     before ICU is compiled.
    - `patches/opencode.patch` (unchanged from
      [`JoeJoeflyn/opencode-core2`](https://github.com/JoeJoeflyn/opencode-core2)):
      lets the OpenCode build honor `BUN_COMPILE_EXECUTABLE_PATH`.
