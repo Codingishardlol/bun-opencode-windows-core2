@@ -1,0 +1,16 @@
+diff --git a/scripts/build/flags.ts b/scripts/build/flags.ts
+index 5b322de8..3341c661 100644
+--- a/scripts/build/flags.ts
++++ b/scripts/build/flags.ts
+@@ -71,9 +71,9 @@ export const cpuTargetFlags: Flag[] = [
+     desc: "ARM64 Windows: ARMv8-A base + CRC, generic tuning (clang-cl prefix required)",
+   },
+   {
+-    flag: "-march=nehalem",
++    flag: c => ((c.linux || c.windows) && process.env.BUN_CORE2_BUILD === "1" ? "-march=penryn" : "-march=nehalem"),
+     when: c => c.x64,
+-    desc: "x64: Nehalem (2008) — no AVX, broadest compatibility",
++    desc: "x64: Nehalem by default; opt-in Penryn for legacy Linux/Windows CPUs",
+   },
+ ];
+ 

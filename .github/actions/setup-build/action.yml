@@ -1,0 +1,128 @@
+name: Set up Windows build toolchain
+description: Installs the toolchain Bun 1.4.4 needs on Windows (LLVM 23.1.1, NASM, make, Cygwin, Python, Git Perl, Rust nightly).
+
+runs:
+  using: composite
+  steps:
+    - name: Install build-time Bun 1.4.4
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: 1.4.4
+
+    - name: Cache LLVM 23.1.1
+      id: llvm-cache
+      uses: actions/cache@v6
+      with:
+        path: C:\tools\llvm-23.1.1
+        key: llvm-23.1.1-win64-v1
+
+    - name: Install LLVM 23.1.1
+      if: steps.llvm-cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $root = "C:\tools\llvm-23.1.1"
+        $archive = Join-Path $env:RUNNER_TEMP "llvm-23.1.1.tar.xz"
+        New-Item -ItemType Directory -Force "C:\tools" | Out-Null
+        if (Test-Path $root) { Remove-Item -Recurse -Force $root }
+        curl.exe -L --fail --retry 5 --retry-delay 5 -o $archive `
+          "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/clang+llvm-23.1.1-x86_64-pc-windows-msvc.tar.xz"
+        if ($LASTEXITCODE -ne 0) { throw "LLVM download failed" }
+        $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+        if ($hash -ne "c54ac8146b420fe72e11e6fdd56498d6818011ad23267196b6ab37b5ac9264c3") {
+          throw "LLVM archive sha256 mismatch: $hash"
+        }
+        New-Item -ItemType Directory -Force $root | Out-Null
+        tar.exe -xf $archive -C $root
+        if ($LASTEXITCODE -ne 0) { throw "LLVM extraction failed" }
+        Remove-Item $archive -Force
+
+    - name: Add LLVM 23.1.1 to PATH
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $bin = "C:\tools\llvm-23.1.1\clang+llvm-23.1.1-x86_64-pc-windows-msvc\bin"
+        if (-not (Test-Path (Join-Path $bin "clang-cl.exe"))) {
+          throw "LLVM 23.1.1 clang-cl.exe not found at $bin"
+        }
+        Add-Content -Path $env:GITHUB_PATH -Value $bin
+        & (Join-Path $bin "clang-cl.exe") --version
+
+    - name: Install NASM, make, Cygwin, and Python
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+          Invoke-RestMethod -Uri "https://get.scoop.sh" | Invoke-Expression
+        }
+        $shims = Join-Path $env:USERPROFILE "scoop\shims"
+        $env:Path = "$shims;$env:Path"
+        scoop install --no-update-scoop nasm make cygwin python
+        if ($LASTEXITCODE -ne 0) { throw "scoop install failed" }
+        if (-not (Test-Path (Join-Path $shims "nasm.exe"))) { throw "NASM install failed" }
+        if (-not (Test-Path (Join-Path $shims "make.exe"))) { throw "make install failed" }
+        Add-Content -Path $env:GITHUB_PATH -Value $shims
+        $cygwin = Join-Path $env:USERPROFILE "scoop\apps\cygwin\current\root\bin"
+        if (Test-Path $cygwin) {
+          Add-Content -Path $env:GITHUB_PATH -Value $cygwin
+        } else {
+          Write-Warning "Cygwin bin directory not found at $cygwin"
+        }
+
+    - name: Prefer Git for Windows Perl and provide a py launcher
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $gitUsr = "C:\Program Files\Git\usr\bin"
+        if (-not (Test-Path (Join-Path $gitUsr "perl.exe"))) {
+          throw "Git for Windows perl.exe not found at $gitUsr"
+        }
+        Add-Content -Path $env:GITHUB_PATH -Value $gitUsr
+
+        $tools = "C:\tools\bin"
+        New-Item -ItemType Directory -Force $tools | Out-Null
+        $launcher = @(
+          '@echo off',
+          'if "%~1"=="-3" shift',
+          'python %*'
+        )
+        Set-Content -Path (Join-Path $tools "py.cmd") -Value $launcher -Encoding Ascii
+        Add-Content -Path $env:GITHUB_PATH -Value $tools
+
+        git config --global --add safe.directory "*"
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+        git config --global core.longpaths true
+
+    - name: Cache Rust nightly-2026-09-15
+      uses: actions/cache@v6
+      with:
+        path: |
+          C:\Users\runneradmin\.rustup\toolchains\nightly-2026-09-15-x86_64-pc-windows-msvc
+          C:\Users\runneradmin\.cargo\registry
+          C:\Users\runneradmin\.cargo\git
+        key: rust-nightly-2026-09-15-v1
+
+    - name: Install Rust nightly-2026-09-15
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        rustup toolchain install nightly-2026-09-15 --profile minimal --component rust-src --no-self-update
+        if ($LASTEXITCODE -ne 0) { throw "rustup toolchain install failed" }
+        rustup run nightly-2026-09-15 rustc -vV
+
+    - name: Print tool versions
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Continue"
+        bun --version
+        cmake --version | Select-Object -First 1
+        ninja --version
+        nasm -v
+        perl -e "print qq(perl $^V\n)"
+        ruby --version
+        python --version
+        py -3 --version
+        go version
+        rustup run nightly-2026-09-15 rustc -V

@@ -1,0 +1,13 @@
+diff --git a/build-icu.ps1 b/build-icu.ps1
+index de16575461f..9149bbcd2d3 100644
+--- a/build-icu.ps1
++++ b/build-icu.ps1
+@@ -106,7 +106,7 @@ if (-not (Test-Path $ICU_SOURCE_DIR)) {
+ 
+ # The code generation floor, the same as the lanes that ship (.github/scripts/lanes.mjs).
+ if ($Platform -eq "x64") {
+-    $ArchFlag = "/clang:-march=nehalem"
++    $ArchFlag = if ($env:BUN_CORE2_BUILD -eq "1") { "/clang:-march=penryn" } else { "/clang:-march=nehalem" }
+ } else {
+     $ArchFlag = "/clang:-march=armv8-a+crc"
+ }

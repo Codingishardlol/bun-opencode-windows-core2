@@ -1,0 +1,210 @@
+name: Build Bun 1.4.4 + OpenCode 2.1.2 (Windows x64, Penryn)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: core2-windows-build
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BUN_TAG: bun-v1.4.4
+  OPENCODE_TAG: v2.1.2
+  WEBKIT_COMMIT: d6375c72affe0f70222cdcb45012b10f0bf3a9d5
+  CORE2_WORK: C:\b
+  BUN_CORE2_BUILD: "1"
+  BUN_BUILD_CACHE_DIR: C:\b\cache
+  CACHE_VERSION: v1
+
+jobs:
+  webkit:
+    name: Build local WebKit (Penryn)
+    runs-on: windows-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-build
+
+      - name: Restore incremental build cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            C:\b\bun
+            C:\b\cache
+            C:\Users\runneradmin\.bun\install\cache
+          key: penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-${{ github.run_id }}-${{ github.run_attempt }}-webkit
+          restore-keys: |
+            penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-
+
+      - name: Prepare Bun and WebKit sources
+        shell: pwsh
+        run: ./scripts/prepare-sources.ps1
+
+      - name: Install Bun dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location "$env:CORE2_WORK\bun"
+          bun install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { throw "bun install failed" }
+
+      - name: Build WebKit with Penryn target
+        id: webkitbuild
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location "$env:CORE2_WORK\bun"
+          . .\scripts\vs-shell.ps1
+          $env:BUN_CORE2_BUILD = "1"
+          $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
+          bun scripts/build.ts --profile=release-local --webkit=local --target=WebKit
+          if ($LASTEXITCODE -ne 0) { throw "WebKit build failed: $LASTEXITCODE" }
+
+      - name: Verify Penryn flags in WebKit and ICU
+        shell: pwsh
+        run: ./scripts/verify-penryn.ps1
+
+      - name: Save incremental build cache
+        if: always() && steps.webkitbuild.outcome != 'skipped'
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            C:\b\bun
+            C:\b\cache
+            C:\Users\runneradmin\.bun\install\cache
+          key: penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-${{ github.run_id }}-${{ github.run_attempt }}-webkit
+
+  build:
+    name: Build Bun and OpenCode (Penryn)
+    needs: webkit
+    runs-on: windows-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-build
+
+      - name: Restore incremental build cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            C:\b\bun
+            C:\b\cache
+            C:\Users\runneradmin\.bun\install\cache
+          key: penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-${{ github.run_id }}-${{ github.run_attempt }}-bun
+          restore-keys: |
+            penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-
+
+      - name: Prepare Bun and WebKit sources
+        shell: pwsh
+        run: ./scripts/prepare-sources.ps1
+
+      - name: Install Bun dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location "$env:CORE2_WORK\bun"
+          bun install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { throw "bun install failed" }
+
+      - name: Build Bun with local WebKit (Penryn)
+        id: bunbuild
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location "$env:CORE2_WORK\bun"
+          . .\scripts\vs-shell.ps1
+          $env:BUN_CORE2_BUILD = "1"
+          $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
+          bun scripts/build.ts --profile=release-local --webkit=local
+          if ($LASTEXITCODE -ne 0) { throw "Bun build failed: $LASTEXITCODE" }
+
+      - name: Verify Penryn flags in Bun, WebKit, and ICU
+        shell: pwsh
+        run: ./scripts/verify-penryn.ps1
+
+      - name: Verify Bun starts and passes runtime smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bunExe = "$env:CORE2_WORK\bun\build\release\bun.exe"
+          if (-not (Test-Path $bunExe)) { throw "Bun executable not found: $bunExe" }
+          $version = (& $bunExe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "bun --version failed" }
+          if ($version -ne "1.4.4") { throw "Unexpected Bun version: $version" }
+          Write-Host "bun --version: $version"
+          & $bunExe "$env:GITHUB_WORKSPACE\tests\runtime-smoke.mjs"
+          if ($LASTEXITCODE -ne 0) { throw "runtime-smoke.mjs failed" }
+
+      - name: Save full build cache
+        if: always() && steps.bunbuild.outcome != 'skipped'
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            C:\b\bun
+            C:\b\cache
+            C:\Users\runneradmin\.bun\install\cache
+          key: penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-${{ github.run_id }}-${{ github.run_attempt }}-bun
+
+      - name: Prepare OpenCode 2.1.2
+        shell: pwsh
+        run: ./scripts/prepare-opencode.ps1
+
+      - name: Install OpenCode dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location "$env:CORE2_WORK\opencode"
+          bun install --frozen-lockfile --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { throw "OpenCode dependency install failed" }
+
+      - name: Build OpenCode with the Penryn Bun runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bunExe = "$env:CORE2_WORK\bun\build\release\bun.exe"
+          if (-not (Test-Path $bunExe)) { throw "Bun executable not found: $bunExe" }
+          Set-Location "$env:CORE2_WORK\opencode"
+          $env:BUN_COMPILE_EXECUTABLE_PATH = $bunExe
+          $env:OPENCODE_VERSION = "2.1.2"
+          $outdir = "$env:CORE2_WORK\dist\opencode"
+          bun packages/cli/script/build.ts --target=opencode-windows-x64 --skip-install --skip-web-ui "--outdir=$outdir"
+          if ($LASTEXITCODE -ne 0) { throw "OpenCode build failed: $LASTEXITCODE" }
+
+      - name: Verify OpenCode artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = "$env:CORE2_WORK\dist\opencode\cli-windows-x64\bin\opencode.exe"
+          if (-not (Test-Path $exe)) {
+            Get-ChildItem -Recurse "$env:CORE2_WORK\dist\opencode" | ForEach-Object { $_.FullName }
+            throw "OpenCode executable not found: $exe"
+          }
+          $env:OPENCODE_DISABLE_AUTOUPDATE = "1"
+          $version = (& $exe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "opencode --version failed" }
+          Write-Host "opencode --version: $version"
+
+          $artifacts = "$env:CORE2_WORK\artifacts"
+          New-Item -ItemType Directory -Force $artifacts | Out-Null
+          Copy-Item "$env:CORE2_WORK\bun\build\release\bun.exe" (Join-Path $artifacts "bun.exe") -Force
+          Copy-Item $exe (Join-Path $artifacts "opencode.exe") -Force
+          Copy-Item "$env:GITHUB_WORKSPACE\tests\runtime-smoke.mjs" (Join-Path $artifacts "runtime-smoke.mjs") -Force
+          Get-ChildItem $artifacts | Format-Table Name, Length
+
+      - name: Upload Bun, OpenCode, and smoke test
+        uses: actions/upload-artifact@v7
+        with:
+          name: bun-1.4.4-opencode-2.1.2-windows-x64-penryn
+          path: |
+            C:\b\artifacts\bun.exe
+            C:\b\artifacts\opencode.exe
+            C:\b\artifacts\runtime-smoke.mjs
+          if-no-files-found: error
+          retention-days: 30
