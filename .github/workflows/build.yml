@@ -65,6 +65,11 @@ jobs:
             $env:Path = "C:\Program Files\CMake\bin;$env:Path"
           }
           cmake --version | Select-Object -First 1
+          # Windows PowerShell 5.1 (used by WebKit's build-icu.ps1) inherits
+          # the runner's PowerShell 7 PSModulePath, which breaks cmdlet
+          # autoloading (Get-FileHash). Give the child the Windows PowerShell
+          # paths only; the pwsh process has already loaded its own modules.
+          $env:PSModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules"
           $env:BUN_CORE2_BUILD = "1"
           $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
           bun scripts/build.ts --profile=release-local --webkit=local --target=WebKit
@@ -131,6 +136,11 @@ jobs:
             $env:Path = "C:\Program Files\CMake\bin;$env:Path"
           }
           cmake --version | Select-Object -First 1
+          # Windows PowerShell 5.1 (used by WebKit's build-icu.ps1) inherits
+          # the runner's PowerShell 7 PSModulePath, which breaks cmdlet
+          # autoloading (Get-FileHash). Give the child the Windows PowerShell
+          # paths only; the pwsh process has already loaded its own modules.
+          $env:PSModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules"
           $env:BUN_CORE2_BUILD = "1"
           $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
           bun scripts/build.ts --profile=release-local --webkit=local

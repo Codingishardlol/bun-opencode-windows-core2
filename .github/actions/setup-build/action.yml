@@ -95,6 +95,20 @@ runs:
         $pyVersion = (& py -3 --version 2>&1 | Out-String).Trim()
         if ($LASTEXITCODE -ne 0) { throw "py -3 is not usable: $pyVersion" }
         Write-Host "py -3: $pyVersion"
+
+    - name: Check Windows PowerShell 5.1 cmdlet availability
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        $old = $env:PSModulePath
+        $env:PSModulePath = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules"
+        try {
+          $out = (& powershell -NoProfile -NonInteractive -Command '$PSVersionTable.PSVersion.ToString(); (Get-Command Get-FileHash -ErrorAction Stop).Name' 2>&1 | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Windows PowerShell check failed: $out" }
+          Write-Host $out
+        } finally {
+          $env:PSModulePath = $old
+        }
         Add-Content -Path $env:GITHUB_PATH -Value $tools
 
         git config --global --add safe.directory "*"
