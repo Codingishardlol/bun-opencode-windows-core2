@@ -120,7 +120,7 @@ runs:
         cmake --version | Select-Object -First 1
         ninja --version
         nasm -v
-        perl -e "print qq(perl $^V\n)"
+        perl -e 'print qq(perl $^V\n)'
         ruby --version
         python --version
         py -3 --version
