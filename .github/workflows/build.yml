@@ -59,6 +59,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           Set-Location "$env:CORE2_WORK\bun"
           . .\scripts\vs-shell.ps1
+          # The VS 2026 shell puts CMake 4.x first; use the runner's CMake 3.31
+          # so Bun's older vendored projects keep their documented behavior.
+          if (Test-Path "C:\Program Files\CMake\bin\cmake.exe") {
+            $env:Path = "C:\Program Files\CMake\bin;$env:Path"
+          }
+          cmake --version | Select-Object -First 1
           $env:BUN_CORE2_BUILD = "1"
           $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
           bun scripts/build.ts --profile=release-local --webkit=local --target=WebKit
@@ -119,6 +125,12 @@ jobs:
           $ErrorActionPreference = "Stop"
           Set-Location "$env:CORE2_WORK\bun"
           . .\scripts\vs-shell.ps1
+          # The VS 2026 shell puts CMake 4.x first; use the runner's CMake 3.31
+          # so Bun's older vendored projects keep their documented behavior.
+          if (Test-Path "C:\Program Files\CMake\bin\cmake.exe") {
+            $env:Path = "C:\Program Files\CMake\bin;$env:Path"
+          }
+          cmake --version | Select-Object -First 1
           $env:BUN_CORE2_BUILD = "1"
           $env:BUN_BUILD_CACHE_DIR = "$env:CORE2_WORK\cache"
           bun scripts/build.ts --profile=release-local --webkit=local

@@ -84,10 +84,17 @@ runs:
         New-Item -ItemType Directory -Force $tools | Out-Null
         $launcher = @(
           '@echo off',
-          'if "%~1"=="-3" shift',
+          'if "%~1"=="-3" (',
+          '  python %2 %3 %4 %5 %6 %7 %8 %9',
+          '  exit /b %ERRORLEVEL%',
+          ')',
           'python %*'
         )
         Set-Content -Path (Join-Path $tools "py.cmd") -Value $launcher -Encoding Ascii
+
+        $pyVersion = (& py -3 --version 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw "py -3 is not usable: $pyVersion" }
+        Write-Host "py -3: $pyVersion"
         Add-Content -Path $env:GITHUB_PATH -Value $tools
 
         git config --global --add safe.directory "*"
@@ -123,6 +130,8 @@ runs:
         perl -e 'print qq(perl $^V\n)'
         ruby --version
         python --version
-        py -3 --version
+        $pyVersion = (& py -3 --version 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw "py -3 failed: $pyVersion" }
+        Write-Host "py -3: $pyVersion"
         go version
         rustup run nightly-2026-09-15 rustc -V
