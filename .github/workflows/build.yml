@@ -49,6 +49,19 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           Set-Location "$env:CORE2_WORK\bun"
+          # actions/cache uses GNU tar, which cannot save/restore Windows junctions. node_modules restored from
+          # the cache therefore has broken package links ("EPERM reading ...\@lezer\lr"), and bun install
+          # sees a matching lockfile and leaves them broken. Delete them so bun install rebuilds them cleanly.
+          $nodeModules = @("node_modules", "src\node-fallbacks\node_modules")
+          $nodeModules += Get-ChildItem "packages" -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName "node_modules" }
+          foreach ($dir in $nodeModules) {
+            if (Test-Path -LiteralPath $dir) {
+              Write-Host "Removing restored $dir"
+              cmd /c rmdir /s /q "$dir"
+              if (Test-Path -LiteralPath $dir) { throw "Could not remove $dir" }
+            }
+          }
           bun install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { throw "bun install failed" }
 
@@ -120,6 +133,19 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           Set-Location "$env:CORE2_WORK\bun"
+          # actions/cache uses GNU tar, which cannot save/restore Windows junctions. node_modules restored from
+          # the cache therefore has broken package links ("EPERM reading ...\@lezer\lr"), and bun install
+          # sees a matching lockfile and leaves them broken. Delete them so bun install rebuilds them cleanly.
+          $nodeModules = @("node_modules", "src\node-fallbacks\node_modules")
+          $nodeModules += Get-ChildItem "packages" -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName "node_modules" }
+          foreach ($dir in $nodeModules) {
+            if (Test-Path -LiteralPath $dir) {
+              Write-Host "Removing restored $dir"
+              cmd /c rmdir /s /q "$dir"
+              if (Test-Path -LiteralPath $dir) { throw "Could not remove $dir" }
+            }
+          }
           bun install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { throw "bun install failed" }
 
