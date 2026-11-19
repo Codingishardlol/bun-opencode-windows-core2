@@ -39,7 +39,9 @@ if ($photonText.Contains($photonBad)) {
     $photonText = $photonText.Replace($photonBad, $photonGood)
     [System.IO.File]::WriteAllText($photonPatch, $photonText, $utf8NoBom)
     Write-Host "Repaired photon-node patch context"
-} else {
+} elseif ($photonText.Contains($photonGood) -or $photonText.Contains("globalThis.__OPENCODE_PHOTON_WASM_PATH")) {
     Write-Host "photon-node patch needs no repair"
+} else {
+    throw "photon-node patch has unexpected content; refusing to continue"
 }
 Write-Host "OpenCode: $head"
