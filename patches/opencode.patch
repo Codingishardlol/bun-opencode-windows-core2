@@ -1,8 +1,8 @@
 diff --git a/packages/cli/script/build.ts b/packages/cli/script/build.ts
-index 3cac51e..3c6f05c 100755
+index a9ae9e6..4fc0bff 100755
 --- a/packages/cli/script/build.ts
 +++ b/packages/cli/script/build.ts
-@@ -151,7 +151,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
+@@ -167,7 +167,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
    }
    const target = targetName(item)
    const name = target.replace(binary, "cli")
@@ -10,4 +10,4 @@ index 3cac51e..3c6f05c 100755
 +  const executablePath = process.env.BUN_COMPILE_EXECUTABLE_PATH ?? (await compileExecutable(item))
    console.log(`building ${name}`)
    const result = await Bun.build({
-     entrypoints: ["./src/index.ts"],
+     entrypoints: ["./src/index.ts", "./src/photon-worker.ts"],

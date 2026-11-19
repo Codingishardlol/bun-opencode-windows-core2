@@ -6,8 +6,8 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "patch-helpers.ps1")
 
 $Root = Split-Path -Parent $PSScriptRoot
-$OpenCodeTag = "v2.1.2"
-$OpenCodeCommit = "a517687fde98a7329ada3ae644a01a9fc6c4e99e"
+$OpenCodeTag = "v2.3.1"
+$OpenCodeCommit = "c769de83007e3584b5b395176c9fcde2d3231e88"
 
 New-Item -ItemType Directory -Force $Work | Out-Null
 $opencode = Join-Path $Work "opencode"
@@ -27,10 +27,9 @@ if ($head -ne $OpenCodeCommit) {
 
 Invoke-GitPatch -Repo $opencode -Patch (Join-Path $Root "patches\opencode.patch")
 
-# OpenCode v2.1.2 ships patches/@silvia-odwyer%2Fphoton-node@0.3.4.patch with one extra leading space on the three
-# context lines of its last hunk, so `bun install` stops with "hunk #10 does not apply to photon_rs.js". Stock Bun
-# 1.4.4 on Linux fails the same way against the published package, so this is not specific to our Bun or to Windows.
-# Repair the three context lines (the +/- lines are untouched) so the patch applies as intended.
+# OpenCode v2.1.2 shipped patches/@silvia-odwyer%2Fphoton-node@0.3.4.patch with one extra leading space on the
+# three context lines of its last hunk, so `bun install` stopped with "hunk #10 does not apply to photon_rs.js".
+# v2.3.1 ships that patch correctly, so only repair it when the old bad spacing is actually present.
 $photonPatch = Join-Path $opencode "patches\@silvia-odwyer%2Fphoton-node@0.3.4.patch"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $photonText = [System.IO.File]::ReadAllText($photonPatch).Replace("`r`n", "`n")
@@ -38,9 +37,9 @@ $photonBad  = "`n      ;`n  };`n  `n-const path = require('path').join(__dirname
 $photonGood = "`n     ;`n };`n `n-const path = require('path').join(__dirname, 'photon_rs_bg.wasm');"
 if ($photonText.Contains($photonBad)) {
     $photonText = $photonText.Replace($photonBad, $photonGood)
+    [System.IO.File]::WriteAllText($photonPatch, $photonText, $utf8NoBom)
     Write-Host "Repaired photon-node patch context"
-} elseif (-not $photonText.Contains($photonGood)) {
-    throw "photon-node patch has unexpected content; cannot repair hunk 10"
+} else {
+    Write-Host "photon-node patch needs no repair"
 }
-[System.IO.File]::WriteAllText($photonPatch, $photonText, $utf8NoBom)
 Write-Host "OpenCode: $head"
