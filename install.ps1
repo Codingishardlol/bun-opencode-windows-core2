@@ -1,15 +1,15 @@
-# Installs the Penryn (Core 2) build of Bun 1.4.4 + OpenCode 2.1.2.
+# Installs the Penryn (Core 2) build of Bun 1.4.4 + OpenCode 2.3.1.
 # Usage: irm https://raw.githubusercontent.com/Codingishardlol/bun-opencode-windows-core2/main/install.ps1 | iex
 $ErrorActionPreference = "Stop"
 
-$tag = "v1.4.4-opencode-2.1.2-penryn"
+$tag = "v1.4.4-opencode-2.3.1-penryn"
 $base = "https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/download/$tag"
 $dir = Join-Path $env:LOCALAPPDATA "core2\bin"
 New-Item -ItemType Directory -Force $dir | Out-Null
 
 $files = [ordered]@{
-    "bun.exe"           = "e92018ec901aa3eda9ca9e718b459332f18a1a043477bd500d59a76653404850"
-    "opencode.exe"      = "00eed2afae31cf991009cba8b676aba76ed0ff2e03be8570cc5d8a9039c660cc"
+    "bun.exe"           = "3d20cff2ff2d31306e788542f59972c83c7bd5703bc808c64cba3e90c67f87c2"
+    "opencode.exe"      = "f7f9cf916b080853b1eaa609029fb794f810d16ebee7cc63add44e252d468fee"
     "runtime-smoke.mjs" = "2ae7fce6ee469b801aead420505a012fa919de144e5713c003176afcb89141ec"
 }
 

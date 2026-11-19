@@ -1,5 +1,8 @@
 # OpenCode 2.3.1 Penryn build — independent review
 
+> **Status:** reviewed and shipped as `v1.4.4-opencode-2.3.1-penryn`. The
+> dispatch instructions below are historical.
+
 ## What this is
 
 Preflight review of a version bump for the Windows x64 Penryn build.

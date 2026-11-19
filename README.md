@@ -1,17 +1,13 @@
-# Bun 1.4.4 + OpenCode 2.1.2 for Windows x64 (Penryn / Core 2)
+# Bun 1.4.4 + OpenCode 2.3.1 for Windows x64 (Penryn / Core 2)
 
-Unofficial Windows x64 build of Bun **1.4.4** and OpenCode **2.1.2** for Intel
+Unofficial Windows x64 build of Bun **1.4.4** and OpenCode **2.3.1** for Intel
 Core 2 CPUs with SSE4.1 but no SSE4.2, POPCNT or AVX — for example the Intel
 Core 2 Quad Q9550. Stock Bun targets Nehalem and crashes with
 `0xC000001D` (illegal instruction) on these CPUs.
 
-**Confirmed on the target Q9550 (Windows 10):**
-
-```text
-bun --version: 1.4.4
-CORE2_RUNTIME_OK: unicode, crypto, hash, compression, JIT, WASM popcnt, sqlite, HTTP, subprocess
-opencode --version: opencode v2.1.2
-```
+The 2.1.2 build was confirmed on a real Q9550. The 2.3.1 build passed the same
+checks on the Windows CI runner; the installer below runs them again on your PC
+before it changes PATH.
 
 ## Install
 
@@ -24,13 +20,22 @@ irm https://raw.githubusercontent.com/Codingishardlol/bun-opencode-windows-core2
 The installer:
 
 1. downloads `bun.exe`, `opencode.exe` and `runtime-smoke.mjs` from the
-   [2.1.2 release](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.1.2-penryn);
+   [2.3.1 release](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.3.1-penryn);
 2. verifies their SHA-256 hashes;
-3. runs the three checks shown above on the local CPU;
+3. runs `bun --version`, the runtime smoke test and `opencode --version` on the
+   local CPU;
 4. only if all three pass, adds `%LOCALAPPDATA%\core2\bin` to the user PATH and
    sets `OPENCODE_DISABLE_AUTOUPDATE=1`.
 
-Open a **new** PowerShell window afterwards to pick up the PATH, then run:
+Expected during install:
+
+```text
+1.4.4
+CORE2_RUNTIME_OK: unicode, crypto, hash, compression, JIT, WASM popcnt, sqlite, HTTP, subprocess
+opencode v2.3.1
+```
+
+Open a **new** PowerShell window afterwards, then run:
 
 ```powershell
 opencode
@@ -39,7 +44,7 @@ opencode
 ### Manual download and test
 
 Download the three files from the
-[2.1.2 release](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.1.2-penryn)
+[2.3.1 release](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.3.1-penryn)
 into one folder, open Command Prompt there, and run:
 
 ```bat
@@ -48,35 +53,31 @@ bun.exe runtime-smoke.mjs
 opencode.exe --version
 ```
 
-Expected output:
-
-```text
-1.4.4
-CORE2_RUNTIME_OK: unicode, crypto, hash, compression, JIT, WASM popcnt, sqlite, HTTP, subprocess
-opencode v2.1.2
-```
-
 If any command fails with `0xC000001D`, stop: the CPU target is wrong.
 
 ### SHA-256
 
 ```text
-e92018ec901aa3eda9ca9e718b459332f18a1a043477bd500d59a76653404850  bun.exe
-00eed2afae31cf991009cba8b676aba76ed0ff2e03be8570cc5d8a9039c660cc  opencode.exe
+3d20cff2ff2d31306e788542f59972c83c7bd5703bc808c64cba3e90c67f87c2  bun.exe
+f7f9cf916b080853b1eaa609029fb794f810d16ebee7cc63add44e252d468fee  opencode.exe
 2ae7fce6ee469b801aead420505a012fa919de144e5713c003176afcb89141ec  runtime-smoke.mjs
 ```
 
-## OpenChamber compatibility
+## OpenChamber
 
-OpenChamber **2.7.2** requires OpenCode **2.2.4 or newer**, so this 2.1.2 build
-cannot drive current OpenChamber. A 2.3.1 build is prepared on the
-[`opencode-2.3.1-penryn`](https://github.com/Codingishardlol/bun-opencode-windows-core2/tree/opencode-2.3.1-penryn)
-branch; it is not released yet.
+OpenChamber **2.7.2** requires OpenCode **2.2.4 or newer**, so 2.1.2 could not
+drive it; 2.3.1 can. The desktop app otherwise uses its bundled stock OpenCode,
+which crashes on a Q9550. Point it at the Penryn binary:
 
-The OpenChamber desktop app bundles its own stock OpenCode, which crashes on
-the Q9550. Point it at the Penryn binary under
-**Settings → OpenCode CLI → Binary path**:
-`%LOCALAPPDATA%\core2\bin\opencode.exe`.
+- **Settings → General → OpenCode CLI → Binary path** →
+  `%LOCALAPPDATA%\core2\bin\opencode.exe`
+- or set `OPENCODE_BINARY` to that path, then restart OpenChamber.
+
+## Previous release
+
+The 2.1.2 build remains available separately:
+[v1.4.4-opencode-2.1.2-penryn](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.1.2-penryn).
+Releases are independent; publishing 2.3.1 does not replace or retag 2.1.2.
 
 ## Do not upgrade
 
@@ -84,14 +85,12 @@ Do not run `bun upgrade` or `opencode upgrade`, and do not install stock Bun or
 OpenCode over this folder. Those fetch Nehalem builds that crash on the Q9550.
 `install.ps1` sets `OPENCODE_DISABLE_AUTOUPDATE=1` for normal use.
 
-If an upgrade does replace the binaries, rerun the install command above. The
-2.1.2 release and the newer 2.3.1 release (once published) are separate
-downloads; neither replaces the other on GitHub.
+If an upgrade does replace the binaries, rerun the install command above.
 
 ## What the workflow does
 
 1. Clones `oven-sh/bun` at `bun-v1.4.4` (commit `38afee6c…`) and
-   `anomalyco/opencode` at `v2.1.2` (commit `a517687f…`).
+   `anomalyco/opencode` at `v2.3.1` (commit `c769de83…`).
 2. Applies:
    - `patches/bun-windows-penryn.patch`: makes `BUN_CORE2_BUILD=1` change the
      x64 CPU target from `-march=nehalem` to `-march=penryn` for Linux and
@@ -104,8 +103,10 @@ downloads; neither replaces the other on GitHub.
      be `${ICU_VERSION}:`), which otherwise stops the local Windows WebKit
      build before ICU is compiled.
    - `patches/opencode.patch`: lets the OpenCode build honor
-     `BUN_COMPILE_EXECUTABLE_PATH`, so the final `opencode.exe` embeds the
-     Penryn Bun runtime instead of downloading a stock one.
+     `BUN_COMPILE_EXECUTABLE_PATH`, so `opencode.exe` embeds the Penryn Bun
+     runtime instead of downloading a stock one. The patch is regenerated for
+     OpenCode 2.3.1; the change is one line in
+     `packages/cli/script/build.ts`.
 3. Fetches `oven-sh/WebKit` at `d6375c72affe0f70222cdcb45012b10f0bf3a9d5`
    into `bun/vendor/WebKit`.
 4. Builds WebKit from source in its own job (`--target=WebKit`), so the slow
@@ -114,7 +115,8 @@ downloads; neither replaces the other on GitHub.
 5. Builds Bun with `BUN_CORE2_BUILD=1` and
    `bun scripts/build.ts --profile=release-local --webkit=local`.
 6. Builds OpenCode with `BUN_COMPILE_EXECUTABLE_PATH` pointing at the new
-   `bun.exe`, target `opencode-windows-x64`, with `--skip-web-ui`.
+   `bun.exe`. OpenCode 2.3.x selects its target with `OPENCODE_TARGET=windows-x64`
+   (the older `--target=` flag is no longer read), with `--skip-web-ui`.
 7. Uploads `bun.exe`, `opencode.exe` and `runtime-smoke.mjs`.
 
 No runtime CPU check is bypassed or stubbed. The compiler target really is
@@ -154,15 +156,16 @@ Download the artifact:
 
 ```bash
 gh run download --repo Codingishardlol/bun-opencode-windows-core2 \
-  -n bun-1.4.4-opencode-2.1.2-windows-x64-penryn -D ./penryn-build
+  -n bun-1.4.4-opencode-2.3.1-windows-x64-penryn -D ./penryn-build
 ```
 
 ## Limits
 
 - CI proves the code builds, the runner's CPU executes it, the Penryn compile
   flags appear in the Bun/WebKit/ICU build inputs, and the smoke test passes.
-  The 2.1.2 binaries were also run on a real Q9550, but future rebuilds are not
-  automatically tested on that CPU.
+- The 2.1.2 binaries were run on a real Q9550. The 2.3.1 binaries passed CI but
+  have not yet been run on a Q9550; `install.ps1` performs that final check on
+  the target PC before adding them to PATH.
 - Penryn requires SSE4.1. This is not for older Core 2 CPUs without SSE4.1.
 - The build intentionally omits OpenCode's embedded browser UI; the CLI/TUI is
   included.

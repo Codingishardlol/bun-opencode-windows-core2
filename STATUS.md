@@ -1,81 +1,63 @@
 # Build status and resume notes
 
-## Current / most recent run
+## Current release
 
-https://github.com/Codingishardlol/bun-opencode-windows-core2/actions
+- **2.3.1:** [v1.4.4-opencode-2.3.1-penryn](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.3.1-penryn)
+  built by run [44581342871](https://github.com/Codingishardlol/bun-opencode-windows-core2/actions/runs/44581342871) from commit `387c109`.
+- **2.1.2:** [v1.4.4-opencode-2.1.2-penryn](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.1.2-penryn)
+  remains available as a separate release.
 
-(Actions run ID is in the URL after opening a run.)
+Both releases target Penryn. The 2.1.2 build was run on a real Q9550; the 2.3.1
+build passed the same checks on the Windows CI runner.
 
-The GitHub Actions run is independent of the Codespace. Closing the Codespace
-does not stop it. Each job has a 6-hour limit; the workflow splits WebKit from
-Bun/OpenCode and saves the build directory as an Actions cache after each
-attempt, so retries resume instead of starting over.
+## Install
 
-## If the run is green
+PowerShell:
 
-Open the run page, scroll to **Artifacts**, and download:
-
-`bun-1.4.4-opencode-2.1.2-windows-x64-penryn`
-
-It contains:
-
-- `bun.exe`
-- `opencode.exe`
-- `runtime-smoke.mjs`
-
-Artifacts are retained for 30 days.
-
-## Test on the Q9550 (Windows 10)
-
-```bat
-cd /d C:\path\to\downloaded\artifact
-bun.exe --version
-bun.exe runtime-smoke.mjs
-opencode.exe --version
+```powershell
+irm https://raw.githubusercontent.com/Codingishardlol/bun-opencode-windows-core2/main/install.ps1 | iex
 ```
+
+The installer downloads from the 2.3.1 release, verifies SHA-256, runs
+`bun --version`, `runtime-smoke.mjs` and `opencode --version` on the PC, then
+adds `%LOCALAPPDATA%\core2\bin` to PATH and sets
+`OPENCODE_DISABLE_AUTOUPDATE=1`.
 
 Expected:
 
-- `bun.exe --version` prints `1.4.4` and does not crash with `0xC000001D`
-  (illegal instruction).
-- `runtime-smoke.mjs` prints
-  `CORE2_RUNTIME_OK: unicode, crypto, hash, compression, JIT, WASM popcnt, sqlite, HTTP, subprocess`.
-- `opencode.exe --version` prints the OpenCode 2.1.2 version.
-
-Then test the real TUI in an isolated profile before replacing your normal
-install. Set `OPENCODE_DISABLE_AUTOUPDATE=1` for normal use and do not run
-`bun upgrade`; a stock update can replace the Penryn runtime with a Nehalem
-build that crashes.
-
-## Bun-only artifact
-
-If the Bun build and smoke test pass but a later OpenCode step fails, the run
-still uploads `bun-1.4.4-windows-x64-penryn-only` (just `bun.exe`). You can test
-that on the Q9550 with `bun.exe --version` while the OpenCode step is fixed.
-
-## If the run is red
-
-Do not click "Re-run failed jobs" blindly. Note the run ID and the name of the
-failed step, then continue the fix with the AI assistant after reopening the
-Codespace. The workflow cache normally preserves the completed WebKit work.
-
-Useful commands after reopening:
-
-```bash
-gh run list --repo Codingishardlol/bun-opencode-windows-core2 --limit 5
-gh run view <RUN_ID> --repo Codingishardlol/bun-opencode-windows-core2
-gh run view <RUN_ID> --repo Codingishardlol/bun-opencode-windows-core2 --log-failed
+```text
+1.4.4
+CORE2_RUNTIME_OK: unicode, crypto, hash, compression, JIT, WASM popcnt, sqlite, HTTP, subprocess
+opencode v2.3.1
 ```
 
-## What has already been fixed
+Then open a new PowerShell window and run `opencode`.
 
-- Patch files are normalized to LF before `git apply` (Windows checkout was
-  converting them to CRLF).
-- WebKit's `build-icu.ps1` PowerShell parse error (`$ICU_VERSION:`).
-- The `py -3` launcher shim.
-- Windows PowerShell 5.1 inheriting the PowerShell 7 `PSModulePath`, which
-  broke `Get-FileHash`.
-- CMake 3.31 is preferred over the VS 2026 shell's CMake 4.x.
+## OpenChamber
 
-The actual Penryn changes are in `patches/bun-windows-penryn.patch` and
-`patches/webkit-penryn-icu.patch`.
+OpenChamber 2.7.2 requires OpenCode 2.2.4 or newer, so 2.1.2 cannot drive it.
+Point OpenChamber at the Penryn binary under **Settings → General → OpenCode
+CLI → Binary path** (`%LOCALAPPDATA%\core2\bin\opencode.exe`) or set
+`OPENCODE_BINARY`, then restart OpenChamber.
+
+## If something fails
+
+- `0xC000001D` (illegal instruction): the CPU target is wrong. Stop and report
+  the exact command.
+- A failed installer check does not modify PATH; rerunning it is safe.
+- To go back to 2.1.2, download that release and run its files manually, or
+  point `OPENCODE_BINARY` at the 2.1.2 `opencode.exe`.
+
+## What changed for 2.3.1
+
+- OpenCode pinned to `v2.3.1` (commit `c769de83…`), which meets OpenChamber
+  2.7.2's minimum.
+- `patches/opencode.patch` regenerated for 2.3.1; the
+  `BUN_COMPILE_EXECUTABLE_PATH` override remains one line.
+- OpenCode 2.3.x selects its target with `OPENCODE_TARGET=windows-x64`, not
+  `--target=`.
+- The photon-node patch repair now only runs when the old bad spacing is
+  present, and fails fast on unexpected content.
+
+The Penryn changes themselves are still in
+`patches/bun-windows-penryn.patch` and `patches/webkit-penryn-icu.patch`.
