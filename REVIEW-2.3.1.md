@@ -8,8 +8,8 @@
 Preflight review of a version bump for the Windows x64 Penryn build.
 
 - Repo: https://github.com/Codingishardlol/bun-opencode-windows-core2
-- Branch: `opencode-2.3.1-penryn`
-- Diff: https://github.com/Codingishardlol/bun-opencode-windows-core2/compare/main...opencode-2.3.1-penryn
+- Merged build commit: `387c109` (review branch merged and deleted)
+- Diff: https://github.com/Codingishardlol/bun-opencode-windows-core2/compare/e82fb5a...387c109
 - Previous successful run (2.1.2): https://github.com/Codingishardlol/bun-opencode-windows-core2/actions/runs/44469769664
 - The 2.1.2 binaries were run on the target Q9550: `bun 1.4.4`, `CORE2_RUNTIME_OK`, `opencode v2.1.2`.
 
@@ -99,7 +99,7 @@ summary:
 
 ## If approved
 
-1. Dispatch `build.yml` on `opencode-2.3.1-penryn` (or merge to `main` first).
+1. Dispatch `build.yml` on `main` (done; the review branch was merged first).
 2. If it passes, create the new release
    `v1.4.4-opencode-2.3.1-penryn` with `bun.exe`, `opencode.exe`, and
    `runtime-smoke.mjs`.
