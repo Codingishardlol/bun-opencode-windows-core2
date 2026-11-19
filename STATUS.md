@@ -47,6 +47,12 @@ install. Set `OPENCODE_DISABLE_AUTOUPDATE=1` for normal use and do not run
 `bun upgrade`; a stock update can replace the Penryn runtime with a Nehalem
 build that crashes.
 
+## Bun-only artifact
+
+If the Bun build and smoke test pass but a later OpenCode step fails, the run
+still uploads `bun-1.4.4-windows-x64-penryn-only` (just `bun.exe`). You can test
+that on the Q9550 with `bun.exe --version` while the OpenCode step is fixed.
+
 ## If the run is red
 
 Do not click "Re-run failed jobs" blindly. Note the run ID and the name of the

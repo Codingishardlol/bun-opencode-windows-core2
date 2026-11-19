@@ -192,6 +192,14 @@ jobs:
           & $bunExe "$env:GITHUB_WORKSPACE\tests\runtime-smoke.mjs"
           if ($LASTEXITCODE -ne 0) { throw "runtime-smoke.mjs failed" }
 
+      - name: Upload Penryn Bun runtime (kept even if the OpenCode steps below fail)
+        uses: actions/upload-artifact@v7
+        with:
+          name: bun-1.4.4-windows-x64-penryn-only
+          path: C:\b\bun\build\release\bun.exe
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Save full build cache
         if: always() && steps.bunbuild.outcome != 'skipped'
         continue-on-error: true
