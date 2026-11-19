@@ -47,6 +47,16 @@ runs:
         }
         Add-Content -Path $env:GITHUB_PATH -Value $bin
         & (Join-Path $bin "clang-cl.exe") --version
+        # Bun's build looks in C:\Program Files\LLVM\bin (the runner's own LLVM 20.x) before PATH and does not
+        # version-check lld-link/llvm-lib, so BUN_TOOLCHAIN_LLVM pins every LLVM tool to this directory. Fail early
+        # here if any tool Bun needs is missing or is not 23.1.1.
+        foreach ($tool in @("clang-cl", "lld-link", "llvm-lib", "llvm-rc")) {
+          $exe = Join-Path $bin "$tool.exe"
+          if (-not (Test-Path $exe)) { throw "$tool.exe missing from $bin" }
+        }
+        $lld = (& (Join-Path $bin "lld-link.exe") --version | Out-String).Trim()
+        Write-Host "lld-link: $lld"
+        if ($lld -notmatch "23\.1\.1") { throw "lld-link is not 23.1.1: $lld" }
 
     - name: Install NASM, make, Cygwin, and Python
       shell: pwsh

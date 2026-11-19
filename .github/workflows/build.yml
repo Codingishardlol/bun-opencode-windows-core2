@@ -16,6 +16,9 @@ env:
   WEBKIT_COMMIT: d6375c72affe0f70222cdcb45012b10f0bf3a9d5
   CORE2_WORK: C:\b
   BUN_CORE2_BUILD: "1"
+  # Make Bun take clang-cl, lld-link, llvm-lib, llvm-rc and llvm-mt only from LLVM 23.1.1 (same LLVM as rustc's),
+  # instead of the runner's preinstalled LLVM 20.x in C:\Program Files\LLVM.
+  BUN_TOOLCHAIN_LLVM: C:\tools\llvm-23.1.1\clang+llvm-23.1.1-x86_64-pc-windows-msvc
   BUN_BUILD_CACHE_DIR: C:\b\cache
   CACHE_VERSION: v1
 
