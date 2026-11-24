@@ -6,8 +6,8 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "patch-helpers.ps1")
 
 $Root = Split-Path -Parent $PSScriptRoot
-$OpenCodeTag = "v2.3.1"
-$OpenCodeCommit = "c769de83007e3584b5b395176c9fcde2d3231e88"
+$OpenCodeTag = "v2.4.1"
+$OpenCodeCommit = "6f0514052a3c859894ad01bb14cc14dda1e44b96"
 
 New-Item -ItemType Directory -Force $Work | Out-Null
 $opencode = Join-Path $Work "opencode"
@@ -29,7 +29,7 @@ Invoke-GitPatch -Repo $opencode -Patch (Join-Path $Root "patches\opencode.patch"
 
 # OpenCode v2.1.2 shipped patches/@silvia-odwyer%2Fphoton-node@0.3.4.patch with one extra leading space on the
 # three context lines of its last hunk, so `bun install` stopped with "hunk #10 does not apply to photon_rs.js".
-# v2.3.1 ships that patch correctly, so only repair it when the old bad spacing is actually present.
+# Current releases (2.4.1 included) ship that patch correctly, so only repair it when the old bad spacing is present.
 $photonPatch = Join-Path $opencode "patches\@silvia-odwyer%2Fphoton-node@0.3.4.patch"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $photonText = [System.IO.File]::ReadAllText($photonPatch).Replace("`r`n", "`n")

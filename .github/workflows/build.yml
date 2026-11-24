@@ -1,4 +1,4 @@
-name: Build Bun 1.4.4 + OpenCode 2.3.1 (Windows x64, Penryn)
+name: Build Bun 1.4.4 + OpenCode 2.4.1 (Windows x64, Penryn)
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
 
 env:
   BUN_TAG: bun-v1.4.4
-  OPENCODE_TAG: v2.3.1
+  OPENCODE_TAG: v2.4.1
   WEBKIT_COMMIT: d6375c72affe0f70222cdcb45012b10f0bf3a9d5
   CORE2_WORK: C:\b
   BUN_CORE2_BUILD: "1"
@@ -211,7 +211,7 @@ jobs:
             C:\Users\runneradmin\.bun\install\cache
           key: penryn-${{ env.CACHE_VERSION }}-${{ env.BUN_TAG }}-${{ env.WEBKIT_COMMIT }}-${{ hashFiles('patches/bun-windows-penryn.patch', 'patches/webkit-penryn-icu.patch') }}-${{ github.run_id }}-${{ github.run_attempt }}-bun
 
-      - name: Prepare OpenCode 2.3.1
+      - name: Prepare OpenCode 2.4.1
         shell: pwsh
         run: ./scripts/prepare-opencode.ps1
 
@@ -231,7 +231,7 @@ jobs:
           if (-not (Test-Path $bunExe)) { throw "Bun executable not found: $bunExe" }
           Set-Location "$env:CORE2_WORK\opencode"
           $env:BUN_COMPILE_EXECUTABLE_PATH = $bunExe
-          $env:OPENCODE_VERSION = "2.3.1"
+          $env:OPENCODE_VERSION = "2.4.1"
           # OpenCode 2.3.x selects the target from OPENCODE_TARGET, not --target.
           $env:OPENCODE_TARGET = "windows-x64"
           $outdir = "$env:CORE2_WORK\dist\opencode"
@@ -250,7 +250,7 @@ jobs:
           $env:OPENCODE_DISABLE_AUTOUPDATE = "1"
           $version = (& $exe --version | Out-String).Trim()
           if ($LASTEXITCODE -ne 0) { throw "opencode --version failed" }
-          if ($version -notmatch "2\.3\.1") { throw "Unexpected OpenCode version: $version" }
+          if ($version -notmatch "2\.4\.1") { throw "Unexpected OpenCode version: $version" }
           Write-Host "opencode --version: $version"
 
           $artifacts = "$env:CORE2_WORK\artifacts"
@@ -263,7 +263,7 @@ jobs:
       - name: Upload Bun, OpenCode, and smoke test
         uses: actions/upload-artifact@v7
         with:
-          name: bun-1.4.4-opencode-2.3.1-windows-x64-penryn
+          name: bun-1.4.4-opencode-2.4.1-windows-x64-penryn
           path: |
             C:\b\artifacts\bun.exe
             C:\b\artifacts\opencode.exe
