@@ -5,9 +5,9 @@ Core 2 CPUs with SSE4.1 but no SSE4.2, POPCNT or AVX — for example the Intel
 Core 2 Quad Q9550. Stock Bun targets Nehalem and crashes with
 `0xC000001D` (illegal instruction) on these CPUs.
 
-The 2.1.2 build was confirmed on a real Q9550. The 2.4.1 build passed the same
-checks on the Windows CI runner; the installer below runs them again on your PC
-before it changes PATH.
+The 2.4.1 build was confirmed on a real Q9550 on 2026-11-25: `bun 1.4.4`,
+`CORE2_RUNTIME_OK`, and `opencode v2.4.1`. The installer below runs the same
+checks again on your PC before it changes PATH.
 
 ## Install
 
@@ -168,9 +168,9 @@ gh run download --repo Codingishardlol/bun-opencode-windows-core2 \
 
 - CI proves the code builds, the runner's CPU executes it, the Penryn compile
   flags appear in the Bun/WebKit/ICU build inputs, and the smoke test passes.
-- The 2.1.2 binaries were run on a real Q9550. The 2.4.1 binaries passed CI but
-  have not yet been run on a Q9550; `install.ps1` performs that final check on
-  the target PC before adding them to PATH.
+- The 2.4.1 binaries were run on a real Q9550 on 2026-11-25, and CI passes the
+  same checks on the Windows runner. `install.ps1` repeats them on the target
+  PC before adding them to PATH.
 - A full TUI/OpenChamber session also exercises the native PTY, OpenTUI and
   Iroh modules; the three installer checks are not a full UI test.
 - Penryn requires SSE4.1. This is not for older Core 2 CPUs without SSE4.1.

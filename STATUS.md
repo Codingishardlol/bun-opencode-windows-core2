@@ -7,9 +7,8 @@
 - **2.3.1:** [v1.4.4-opencode-2.3.1-penryn](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.3.1-penryn)
 - **2.1.2:** [v1.4.4-opencode-2.1.2-penryn](https://github.com/Codingishardlol/bun-opencode-windows-core2/releases/tag/v1.4.4-opencode-2.1.2-penryn)
 
-All releases target Penryn and remain available separately. The 2.1.2 build was
-run on a real Q9550; 2.3.1 and 2.4.1 passed the same checks on the Windows CI
-runner.
+All releases target Penryn and remain available separately. 2.1.2 and 2.4.1
+were run on a real Q9550; 2.3.1 passed the same checks on the Windows CI runner.
 
 ## Install
 
